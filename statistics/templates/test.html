@@ -1,0 +1,13 @@
+<head>
+  <meta charset="utf-8" />
+  <title>russia MUST BE STOPPED!</title>
+</head>
+<body>
+  <script>
+    xhttp = new XMLHttpRequest();
+    xhttp.open('POST', "http://localhost:5000/test", false);
+    xhttp.setRequestHeader("Content-Type", "application/json");
+    xhttp.send("{ \"success\": 12, \"failure\": 23 }");
+    console.log(xhttp.responseText)
+  </script>
+</body>

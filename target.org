@@ -1,0 +1,46 @@
+#+title: Пробная цель
+
+Работу генератора можно проверить на пробной цели. Пробная цель подсчитывает запросы, приходящие с
+определенного адреса.
+
+* Модуль сервера
+:PROPERTIES:
+:ID:       d3a9288b-2f54-4dda-a8cb-6db5b5f3c6c1
+:END:
+
+#+BEGIN_SRC python :noweb yes :tangle target.py
+  <<target:Импорт>>
+
+  <<target:Параметры>>
+
+  <<target:Определения>>
+
+  <<target:Обработчики>>
+#+END_SRC
+
+* Приложение
+
+#+BEGIN_SRC python :noweb-ref target:Импорт
+  from flask import Flask
+  from config import Config
+  from models import db
+#+END_SRC
+
+#+BEGIN_SRC python :noweb-ref target:Определения
+  app = Flask(__name__)
+  app.config.from_object(Config)
+  db.init_app(app)
+#+END_SRC
+
+* Обработчики
+
+Корневой обработчик просто фиксирует успешное обращение.
+
+#+BEGIN_SRC python :noweb yes :noweb-ref target:Обработчики
+  @app.route("/")
+  def record():
+      print("Ok")
+      return "Ok"
+#+END_SRC
+
+

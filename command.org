@@ -1,0 +1,251 @@
+#+title: Консольные команды
+
+Консольные команды используются для сложного управления данными. Например, добавим набор команд =CRUD=
+для управления пользователями. Такой набор не требует создание отдельного раздела в админке.
+
+Для реализации команд используется механизм, описанный в https://flask.palletsprojects.com/en/2.0.x/cli/,
+который в свою очередь основан на [[https://click.palletsprojects.com/en/8.0.x/][Click]].
+
+#+BEGIN_SRC python :noweb yes :tangle command.py
+  <<command:Импорт>>
+
+  <<command:Определения>>
+#+END_SRC
+
+* Приложение
+
+Сначала создадим приложение и проинициализируем базу.
+
+#+BEGIN_SRC python :noweb-ref command:Импорт
+  from flask import Flask
+  from config import Config
+#+END_SRC
+
+#+BEGIN_SRC python :noweb-ref command:Определения
+  app = Flask(__name__)
+  app.config.from_object(Config)
+  db.init_app(app)
+#+END_SRC
+
+* Группа команд для управления целями
+
+Создадим группу команд ~target~ для управления целями.
+
+#+BEGIN_SRC python :noweb-ref command:Импорт
+  from flask.cli import AppGroup
+#+END_SRC
+
+#+BEGIN_SRC python :noweb-ref command:Определения
+  target = AppGroup('target')
+  app.cli.add_command(target)
+#+END_SRC
+
+** Добавление цели
+
+Команда ~target add~ добавляет нового пользователя, используя параметр в качестве имени.
+
+#+BEGIN_SRC python :noweb-ref command:Импорт
+  import click
+  from models import db, Target
+#+END_SRC
+
+#+BEGIN_SRC python :noweb-ref command:Определения
+  @target.command('add')
+  @click.argument('url')
+  def add_target(url):
+      is_exist = Target.query.filter_by(url=url).count()
+
+      if not is_exist:
+          target = Target(url)
+      else:
+          target = Target.query.filter_by(url=url).one()
+          target.is_active = True
+
+      db.session.add(target)
+      db.session.commit()
+#+END_SRC
+
+Для проверки создадим некоторую цель.
+
+#+BEGIN_SRC sh
+  FLASK_APP=command flask target add "http://fsb.ru"
+#+END_SRC
+
+#+RESULTS:
+
+** Выключение цели
+
+#+BEGIN_SRC python :noweb-ref command:Определения
+  @target.command('remove')
+  @click.argument('url')
+  def remove_target(url):
+      is_exist = Target.query.filter_by(url=url).count()
+
+      if is_exist:
+          target = Target.query.filter_by(url=url).one()
+          target.is_active = False
+
+      db.session.add(target)
+      db.session.commit()
+#+END_SRC
+
+Для проверки выключим некоторую цель.
+
+#+BEGIN_SRC sh
+  FLASK_APP=command flask target remove "http://fsb.ru"
+#+END_SRC
+
+#+RESULTS:
+** Обновление статистики по целям
+
+Команда ~target ratio~ перебирает все цели, для каждой цели вычисляет статистику из таблицы ~records~ и
+обновляет ее.
+
+#+BEGIN_SRC python :noweb-ref command:Определения
+  @target.command('ratio')
+  def ratio():
+      targets = Target.query.all()
+
+      for t in targets:
+          with db.engine.connect() as c:
+              rows = c.execute(f"select url, sum(failure)/(sum(success)+sum(failure)) rate from records group by url having url='%s'" % t.url)
+              for r in rows:
+                  t.ratio = r[1]
+
+              db.session.add(t)
+            
+      db.session.commit()
+#+END_SRC
+
+** TODO Добавление файла целей
+
+Команда ~target file~ открывает =yaml=-файл, имя которого задано параметром, и сохраняет цели. Пока что
+обрабатываются только =socket=-цели.
+
+#+BEGIN_SRC python :noweb-ref command:Импорт
+  import yaml
+#+END_SRC
+
+#+BEGIN_SRC python :noweb yes :noweb-ref command:Определения
+  @target.command('file')
+  @click.argument('name')
+  def add_targets(name):
+      with open(name, 'r') as f:
+          data = yaml.safe_load(f)
+          <<command:file:Обработать-файл-целей>>
+#+END_SRC
+
+В файле вначале перебираются =Темы=, затем =Ресурсы=, которые являются частью определения цели.
+
+#+BEGIN_SRC python :noweb-ref command:Импорт
+  from models import SocketTarget, WebTarget
+#+END_SRC
+
+#+BEGIN_SRC python :noweb yes :noweb-ref command:file:Обработать-файл-целей
+  for topic in data['topics']:
+      for resource in topic['resources']:
+          for target in resource['targets']:
+              web, socket = parse_target(target)
+              for dest in socket:
+                  db.session.add(SocketTarget.make(
+                      topic['name'], resource['name'],
+                      dest['address'], dest['port'], dest['proto']))
+              for dest in web:
+                  db.session.add(WebTarget.make(
+                      topic['name'], resource['name'],
+                      dest))
+  db.session.commit()
+#+END_SRC
+
+* TODO Анализ цели
+
+Функция ~parse_target~ разбирает "сырой" источник ~source~ в виде строки и строит список целей.
+
+#+begin_src python :noweb yes :noweb-ref command:Определения
+  def parse_target(source):
+      web = []
+      socket = []
+      result = (web, socket)
+      <<command:parse_target:Действия>>
+      return result
+#+end_src
+
+При этом само исходное описание, так и построенные цели строятся как =web=, так и =socket=. Упростим
+ситуацию, и будем строить только =socket=-цели.
+
+Начнем с того, что разделим источник по типу. =web= отличается от =socket= тем, что в начале у нее идет
+префикс ~http~.
+
+#+BEGIN_SRC python :noweb-ref command:Импорт
+  import re
+#+END_SRC
+
+#+begin_src python :noweb yes :noweb-ref command:parse_target:Действия
+  if re.search(r"^http", source):
+      <<command:parse_target:web:Действия>>
+  else:
+      <<command:parse_target:socket:Действия>>
+      pass
+#+end_src
+
+** TODO Анализ =web=-цели
+:PROPERTIES:
+:ID:       b56f39e9-746b-4a67-a161-98ec43fe290b
+:END:
+
+=Web=-цель разбирается на /Протокол/ (~proto~), /Адрес/ (~address~) и /Путь/ (~path~). Для формирования
+=socket=-цели достаточно использовать сокет и протокол. Адрес используется без изменений, а протокол
+анализируется, он должен быть либо ~http~ (транслируется в ~80/tcp~), либо ~https~ (~443/tcp~).
+
+#+begin_src python :noweb yes :noweb-ref command:parse_target:web:Действия
+  m = re.fullmatch(r"(http|https)://([a-z0-9\-\.]+)(.*)", source)
+  if m[1] == 'http':
+      port = 80
+  elif m[1] == 'https':
+      port = 443
+  else:
+      raise "Неправильный протокол"
+  if m[3] == "":
+        source += "/"
+  web.append(source)
+  socket.append({
+      'address': m[2],
+      'port': port,
+      'proto': 'tcp'})
+#+end_src
+
+** TODO Анализ =socket=-цели
+
+Описание =socket=-цели содержит адрес, а потом в скобках перечисление портов через запятую в формате
+=<port>/<proto>=.
+
+Сначала разделим всю цель на адрес и список портов.
+
+#+begin_src python :noweb yes :noweb-ref command:parse_target:socket:Действия
+  m = re.fullmatch(r"([^ ]+) \(([^\)]+)\)", source)
+  address, ports = m[1], m[2].split(", ")
+#+end_src
+
+После этого перебираем каждый порт и выделяем в нем протокол. При этом псевдопротоколы ~http~ и ~https~
+заменяем на ~tcp~.
+
+Для =web=-целей добавляем цель, только если у нее порт =80/tcp= (как цель =HTTP=) или =443/tcp= (как цель
+=HTTPS=).
+
+#+begin_src python :noweb yes :noweb-ref command:parse_target:socket:Действия
+  for p in ports:
+      port, proto = p.split("/")
+      port = int(port)
+      if proto in ['http', 'https']:
+          proto = 'tcp'
+      socket.append({
+          'address': address,
+          'port': port,
+          'proto': proto})
+      if port == 80 and proto == 'tcp' :
+          web.append(f"http://%s/" % address)
+      elif port == 443 and proto == 'tcp':
+          web.append(f"https://%s/" % address)
+#+end_src
+
+* TODO Добавить обработку нестандартных портов

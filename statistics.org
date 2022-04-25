@@ -1,0 +1,61 @@
+#+title: Обработка статистики =JS=
+
+Страница должна отдавать статистику успешности. Для этого воспользуемся ~XMLHttpRequest~.
+
+* Модуль сервера
+:PROPERTIES:
+:ID:       d3a9288b-2f54-4dda-a8cb-6db5b5f3c6c1
+:END:
+
+#+BEGIN_SRC python :noweb yes :tangle statistics/__init__.py
+  <<statistics:Импорт>>
+
+  <<statistics:Параметры>>
+
+  <<statistics:Определения>>
+
+  <<statistics:Обработчики>>
+#+END_SRC
+
+* Приложение
+
+#+BEGIN_SRC python :noweb-ref statistics:Импорт
+  from flask import Flask
+  from config import Config
+  from models import db
+#+END_SRC
+
+#+BEGIN_SRC python :noweb-ref statistics:Определения
+  app = Flask(__name__)
+  app.config.from_object(Config)
+  db.init_app(app)
+#+END_SRC
+
+* Обработчики
+
+Корневой обработчик возвращает тестовую страницу.
+
+#+BEGIN_SRC python :noweb-ref statistics:Импорт
+  from flask import render_template
+#+END_SRC
+
+#+BEGIN_SRC python :noweb yes :noweb-ref statistics:Обработчики
+  @app.route("/")
+  def index():
+      return render_template("test.html")
+#+END_SRC
+
+** Тест POST-запроса
+
+#+BEGIN_SRC python :noweb-ref statistics:Импорт
+  from flask import request
+#+END_SRC
+
+#+BEGIN_SRC python :noweb yes :noweb-ref statistics:Обработчики
+  @app.route("/test", methods=['POST'])
+  def test():
+      print(request.headers)
+      print(request.json)
+      return 'Ok'
+#+END_SRC
+
